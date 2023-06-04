@@ -139,7 +139,7 @@ profile := $(GEN_HEADER_DIR)/profile_gen.h
 
 #makefile语法：$(call function-name, arguments)调用函数，result := $(call my_func, arg1, arg2)
 #make_echo_color_bold是在colors.mk中定义的函数，用于颜色输出
-#K 是K := $(ROOT)/src 是定义的OS所有源文件的目录，所以make -C指令是用于
+#K 是K := $(ROOT)/src 是定义的OS所有源文件的目录，所以make -C指令是用执行在$(K)目录下的makefile文件
 kernel: $(syscall)
 	$(call make_echo_color_bold, white,\nCFLAGS = $(CFLAGS)\n)
 	$(V)make -C $K

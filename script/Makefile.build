@@ -1,0 +1,83 @@
+# 设置 Shell 解释器为 /bin/bash
+export SHELL := /bin/bash
+
+# 定义伪目标
+PHONY := __build
+
+# 空目标，不执行任何操作
+__build:
+
+# 清空需要的变量
+# obj-y: 存储目标文件的变量
+# subdir-y: 存储子目录名称的变量
+obj-y :=
+subdir-y :=
+
+# 构建目录
+# 将当前目录路径替换为构建目录路径
+BUILD_DIR := $(subst $K,$(OBJ_DIR),$(shell pwd))
+BUILD_DIR := $(subst $U,$(U_OBJ_DIR),$(BUILD_DIR))
+PHONY += $(BUILD_DIR)
+
+# 创建构建目录
+$(BUILD_DIR):
+	@mkdir -p $(BUILD_DIR)
+
+# 包含同级目录 Makefile
+# 注意：相对路径是相对于执行此 Makefile.build 的目录
+include $(SCRIPT)/colors.mk
+include Makefile
+
+# 允许额外的 CFLAGS 向下继承，方便传递 -I 标志
+export EXTRA_CFLAGS
+
+# 获取当前 Makefile 需要编译的子目录的目录名
+# obj-y: 存储目标文件和子目录名称的变量
+# __subdir-y: 存储子目录名称的临时变量
+# subdir-y: 存储子目录名称的变量
+__subdir-y := $(patsubst %/,%,$(filter %/, $(obj-y)))
+subdir-y += $(__subdir-y)
+
+# 将子目录的目标文件路径添加到 subdir_objs 列表中
+# subdir_objs: 存储子目录目标文件路径的变量
+subdir_objs := $(foreach sub,$(subdir-y),$(BUILD_DIR)/$(sub)/built-in.o)
+
+# 获取当前目录需要编译的文件的目标路径
+# cur_objs: 存储当前目录文件目标路径的变量
+cur_objs := $(foreach obj,$(filter-out %/,$(obj-y)),$(BUILD_DIR)/$(obj))
+
+# 使修改头文件 .h 后，重新执行 make 可以重新编译
+# dep_files: 存储依赖文件路径的变量
+dep_files := $(foreach f,$(cur_objs),$(f).d)
+dep_files := $(wildcard $(dep_files))
+
+# 如果依赖文件存在，则包含它们
+ifneq ($(dep_files),)
+  include $(dep_files)
+endif
+
+# 构建目标
+__build: $(subdir-y) $(BUILD_DIR) $(BUILD_DIR)/built-in.o
+
+# 优先编译子目录内容
+$(subdir-y):
+	$(V)make -C $@ -f $(SCRIPT)/Makefile.build
+
+# 链接目标文件为最终目标（可重定位格式）
+$(BUILD_DIR)/built-in.o: $(cur_objs) $(subdir_objs)
+	$(V)$(LD) -r -o $@ $^
+
+# 生成 C 源文件的目标文件规则
+$(BUILD_DIR)/%.o: %.c
+	$(V)$(CC) $(CFLAGS) $(EXTRA_CFLAGS) $(CFLAGS_$<) -Wp,-MD,$(dep_file) -c -o $@ $<
+	$(V)sed -i -E 's,(.*)\.o[ :]*,$(BUILD_DIR)/\1.o: ,g' $@.d
+	$(call make_echo_build_c_object)
+
+# 生成汇编源文件的目标文件规则
+$(BUILD_DIR)/%.o: %.S
+	$(V)$(CC) $(CFLAGS) $(EXTRA_CFLAGS) $(CFLAGS_$<) -Wp,-MD,$(dep_file) -c -o $@ $<
+	$(V)sed -i -E 's,(.*)\.o[ :]*,$(BUILD_DIR)/\1.o: ,g' $@.d
+	$(call make_echo_build_asm_object)
+
+# 声明伪目标，以免与同名文件发生冲突
+.PHONY: $(PHONY)
