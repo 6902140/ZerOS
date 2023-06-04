@@ -4,7 +4,7 @@ SHELL = /bin/bash
 CFLAGS += -I$(ROOT)/include
 CFLAGS += -I$K/include
 
-#构建目标路径
+#构建目标路径 BUILD_ROOT 	:= $(ROOT)/build
 TARGET := $(BUILD_ROOT)/kernel
 
 # 添加要*包含在构建目标中*的源文件或目录,也就是说这些全部是包含在TARGET目录下的
@@ -36,7 +36,8 @@ obj-y += zerodev.o
 #注：OBJ_DIR 	:= $(BUILD_ROOT)/objs这是在上一级makefile中指定的
 BUILD_DIR := $(subst $K,$(OBJ_DIR),$(shell pwd))
 # $(subst from,to,text): subst函数用于在文本中将某个字符串from替换为另一个字符串to。
-# 使用这个makefile内置函数来切换到build路径下
+# 使用这个makefile内置函数来切换到build/objs路径下
+
 include $(SCRIPT)/colors.mk
 
 # 在makefile文件中”all“通常被用作目标入口点

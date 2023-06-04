@@ -1,3 +1,18 @@
+
+
+#
+#这一段是递归构建的具体实现
+#
+#每次需要递归构建就通过
+#
+#start_recursive_build:
+#	$(V)make -C ./ -f $(SCRIPT)/Makefile.build
+#
+#
+
+
+
+
 # 设置 Shell 解释器为 /bin/bash
 export SHELL := /bin/bash
 
